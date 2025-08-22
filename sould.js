@@ -78,39 +78,9 @@ let taskIdCounter = 1
 let currentFilter = 'all'
 
 
-///CLICK EVENT ON BUTTON
-
-// addBtn.addEventListener('click', addTask());
-taskInput.addEventListener('keypress', function(e) {
-    if(e.key === 'Enter') {
-        addTask()
-    }
-})
-
-
-////iNPUT VALIDATION
-taskInput.addEventListener('input', function() {
-    const isEmpty = this.value.trim() === "";
-    addBtn.disabled = isEmpty;
-});
-
-
-////FILTERING BUTTON AND REMOVING/ADDING ACTIVE STATE
-filterButtons.forEach(btn => {
-    btn.addEventListener('click', function() {
-        filterButtons.forEach(b => b.classList.remove('active'));
-        this.classList.add('active')
-        currentFilter = this.dataset.filter;
-        renderTask()
-    })
-})
-
-
-
 ///Adding Task 
 const addTask = () => {
     const taskText = taskInput.value.trim();
-
 
     if(taskText === '') {
         alert('Please enter task');
@@ -127,34 +97,45 @@ const addTask = () => {
     }
 
     ////Updating the Array with new task
-    tasks.push()
+    tasks.push(task)
 
     ///Clear input
     taskInput.value = "",
-    addBtn.disable = true
+    addBtn.disabled = true
 
     ///update ui
 
-    renderTask()
+    renderTask();
     // updateTask()
 
-}
+};
 
-
-const toggleTask = (taskId) => {
-    const task = tasks.find(task => task.id === taskId)
+const toggleTask = (id) => {
+    const task = tasks.find(t => t.id === id)
 
     if(task) {
-        task.completed = !taskCompleted;
+        task.completed = !task.completed;
         renderTask()
         // updateTask()
     }
 }
 
+////EDIT TASK
+const editTask = (id) => {
+    const task = tasks.find(t => t.id === id);
+    if (!task) return;
 
-const deleteTask =(taskId) => {
+    const newText = prompt('Edit your task:', task.text);
+    if (newText && newText.trim() !== '') {
+        task.text = newText.trim();
+        renderTask();
+    }
+};
+
+
+const deleteTask =(id) => {
     if(confirm('Are you sure you want to delete this task?')) {
-        tasks = tasks.filter(task => task.id);
+        tasks = tasks.filter(t => t.id !== id);
 
         renderTask()
         // updateTask()
@@ -168,7 +149,7 @@ const renderTask = () => {
     let filteredTask = tasks;
 
     if(currentFilter === 'completed') {
-        filteredTask = tasks.filter(task => task.completed)
+        filteredTask = tasks.filter(t => t.completed)
     } else if (currentFilter === 'pending') {
         filteredTask = tasks.filter(t => !t.completed)
     }
@@ -176,12 +157,24 @@ const renderTask = () => {
 
     if(filteredTask.length === 0) {
 
-        emptyState.style.display = 'block'
-        return
+        emptyState.style.display = 'block';
+        totalTaskElement.textContent = '0';
+        completedTask.textContent = '0';
+        pendingTask.textContent = '0';
+        return;
     } else {
         emptyState.style.display = 'none'
     }
-}
+
+    filteredTask.forEach(task => {
+        taskList.appendChild(createTask(task));
+    });
+
+    // Update stats
+    totalTaskElement.textContent = tasks.length;
+    completedTask.textContent = tasks.filter(t => t.completed).length;
+    pendingTask.textContent = tasks.filter(t => !t.completed).length;
+};
 
 
 
@@ -190,24 +183,25 @@ const createTask = (task) => {
 
     li.className = `task-item ${task.completed ? 'completed' : ''}`
 
-    li.setAttribute('data-data-id', task.id);
+    li.setAttribute('data-id', task.id);
 
 
     li.innerHTML = `
         <div class="task-content">
-            <input type="checkbox" class="task-checkbox" ${task.completed ? checked : "" }
-                onChange="toggleTask${task.completed ? 'completed' : ""}">
+            <input type="checkbox" class="task-checkbox" ${task.completed ? 'checked' : '' }
+                onChange="toggleTask(${task.id})">
 
-            <span class="task-text${task.completed ? 'completed' : ""}">${task.text}</span>
-            <button class="btn delete-btn" onClick="delete(${task.id})">
+            <span class="task-text ${task.completed ? 'completed' : ''}"> ${task.text}</span>
+            
+            <button class="btn edit-btn" onclick="editTask(${task.id})">
+                Edit
+            </button>
+            <button class="btn delete-btn" onClick="deleteTask(${task.id})">
                 Delete
             </button>
-        
-        
         </div>
     
     `;
-
     return li
 }
 
@@ -218,7 +212,42 @@ const init = () => {
     // updateTask()
 }
 
-init()
+
+
+///CLICK EVENT ON BUTTON
+
+addBtn.addEventListener('click', addTask);
+
+taskInput.addEventListener('keypress', function(e) {
+    if(e.key === 'Enter') {
+        addTask()
+    }
+});
+
+////iNPUT VALIDATION
+taskInput.addEventListener('input', function() {
+    const isEmpty = this.value.trim() === "";
+    addBtn.disabled = isEmpty;
+});
+
+
+////FILTERING BUTTON AND REMOVING/ADDING ACTIVE STATE
+filterButtons.forEach(btn => {
+    btn.addEventListener('click', function() {
+        filterButtons.forEach(b => b.classList.remove('active'));
+        this.classList.add('active')
+        currentFilter = this.dataset.filter;
+        renderTask()
+    });
+});
+
+
+// Expose functions globally for inline events
+window.toggleTask = toggleTask;
+window.editTask = editTask;
+window.deleteTask = deleteTask;
+
+init();
 
 
 
